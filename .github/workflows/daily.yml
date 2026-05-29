@@ -27,7 +27,15 @@ jobs:
           sudo sed -i 's/rights="none" pattern="@\*"/rights="read|write" pattern="@*"/' /etc/ImageMagick-6/policy.xml || true
 
       - name: Install Python dependencies
-        run: pip install --no-cache-dir -r requirements.txt
+        run: |
+          pip install --no-cache-dir -r requirements.txt
+          pip uninstall groq -y || true
+
+      - name: Debug
+        run: |
+          echo "=== story_generator.py ===" && head -10 bot/story_generator.py
+          echo "=== groq installed? ===" && pip show groq 2>&1 || echo "groq NOT installed"
+          echo "=== openai installed? ===" && pip show openai 2>&1 | head -3
 
       - name: Run bot
         env:
