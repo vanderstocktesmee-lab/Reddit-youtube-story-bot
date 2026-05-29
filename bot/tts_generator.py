@@ -2,8 +2,8 @@ import asyncio
 import os
 import edge_tts
 
-VOICE = os.getenv("TTS_VOICE", "en-US-AriaNeural")
-RATE = os.getenv("TTS_RATE", "+8%")
+VOICE = os.getenv("TTS_VOICE", "en-US-AndrewNeural")
+RATE = os.getenv("TTS_RATE", "+15%")
 
 
 async def generate_tts(text: str) -> tuple[str, list[dict]]:

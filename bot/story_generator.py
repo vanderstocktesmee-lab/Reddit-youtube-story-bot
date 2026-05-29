@@ -13,42 +13,50 @@ STORY_TYPES = [
     {
         "genre": "aita",
         "prompt": (
-            "Write a dramatic first-person story about a social conflict — "
-            "someone in a difficult situation where they question if they did the right thing. "
-            "Make it feel very real and relatable. Include clear emotion and a satisfying ending. "
-            "Around 300-350 words. Natural spoken style, no Reddit jargon or abbreviations."
+            "Write a viral Reddit AITA-style story. The VERY FIRST line must be a punchy "
+            "title written as a question, like: 'Am I wrong for kicking my sister out of my wedding?' "
+            "Then on a new line, tell the full first-person story with vivid, specific, realistic details "
+            "(real names, ages, exact things people said) about a tense social conflict where the "
+            "listener has to pick a side. End with the narrator asking 'So... am I really the bad guy here?' "
+            "Around 260-320 words. Sound like a real person talking, not formal writing."
         ),
     },
     {
         "genre": "revenge",
         "prompt": (
-            "Write a satisfying first-person story where someone gets clever payback "
-            "against a rude boss, neighbor, or customer. The revenge should be smart, not violent. "
-            "Around 300-350 words. Natural spoken style."
+            "Write a viral Reddit petty-revenge story. The VERY FIRST line must be an irresistible hook, "
+            "like: 'My boss tried to steal my bonus, so I made sure he lost everything.' "
+            "Then on a new line, tell the satisfying first-person story with specific, clever, non-violent payback "
+            "against a rude boss, neighbor, or customer. Build it up and end on the exact moment of triumph. "
+            "Around 260-320 words. Sound like a real person talking."
         ),
     },
     {
         "genre": "confession",
         "prompt": (
-            "Write a dramatic first-person confession — something the narrator kept secret for years. "
-            "Make it emotional and gripping with a surprising twist or revelation. "
-            "Around 300-350 words. Natural spoken style."
+            "Write a viral Reddit confession story. The VERY FIRST line must be a gripping hook, "
+            "like: 'I've never told anyone this, but I know what really happened to my brother.' "
+            "Then on a new line, reveal a secret the narrator kept for years, with rising tension and "
+            "a surprising emotional twist at the end. Around 260-320 words. Sound like a real person talking."
         ),
     },
     {
         "genre": "horror",
         "prompt": (
-            "Write a short creepy first-person horror or supernatural experience story. "
-            "It should feel like something that really happened. Build tension slowly, "
-            "end on something chilling. Around 300-350 words. No gore."
+            "Write a viral Reddit true-scary-story (nosleep style). The VERY FIRST line must be a chilling hook, "
+            "like: 'I still can't explain what was standing at the end of my bed that night.' "
+            "Then on a new line, build slow dread with realistic, mundane details that turn wrong, "
+            "and end on a final line that gives the listener chills. No gore. "
+            "Around 260-320 words. Sound like a real person nervously recounting it."
         ),
     },
     {
         "genre": "wholesome",
         "prompt": (
-            "Write a heartwarming first-person story about an unexpected act of kindness "
-            "or a surprising positive moment that genuinely changed someone's perspective. "
-            "Around 300-350 words. Natural spoken style."
+            "Write a viral Reddit wholesome story. The VERY FIRST line must be a warm hook, "
+            "like: 'I was at the lowest point of my life when a complete stranger changed everything.' "
+            "Then on a new line, tell an uplifting first-person story with a genuinely touching payoff. "
+            "Around 260-320 words. Sound like a real person sharing something that moved them."
         ),
     },
 ]
@@ -71,10 +79,12 @@ def generate_story() -> dict:
             {
                 "role": "system",
                 "content": (
-                    "You are a master storyteller for YouTube Shorts narration. "
-                    "Write gripping, emotional stories that hook the viewer in the first sentence. "
-                    "Write naturally as if speaking out loud. No hashtags, no labels, no titles — "
-                    "just the story itself."
+                    "You write viral Reddit-style stories for YouTube Shorts narration. "
+                    "Your number one job is the HOOK: the first sentence must make the viewer unable to scroll away. "
+                    "Write in first person as a real person sharing their own story — conversational, specific, "
+                    "and emotional, never formal or generic. Use concrete details that make it feel 100% real. "
+                    "Build tension and pay it off with a satisfying, shocking, or moving ending. "
+                    "Output ONLY the spoken words: no hashtags, no emojis, no stage directions, no labels like 'Title:'."
                 ),
             },
             {"role": "user", "content": story_type["prompt"]},
