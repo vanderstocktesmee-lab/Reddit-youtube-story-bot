@@ -227,7 +227,8 @@ async def run_longform() -> tuple:
         fps=FPS,
         codec="libx264",
         audio_codec="aac",
-        preset="ultrafast",
+        preset="veryfast",
+        bitrate="5000k",
         threads=4,
         logger=None,
     )

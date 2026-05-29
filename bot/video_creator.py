@@ -268,7 +268,8 @@ def create_video(audio_path: str, word_boundaries: list, metadata: dict) -> str:
         fps=FPS,
         codec="libx264",
         audio_codec="aac",
-        preset="ultrafast",
+        preset="veryfast",
+        bitrate="4500k",
         threads=4,
         logger=None,
     )
