@@ -3,21 +3,19 @@ import random
 
 import edge_tts
 
-# Warm, soft, human-sounding voices. A random one is picked per run so the
-# channel varies but every voice has a gentle, cosy tone (soft male / soft female).
+# Microsoft's "Multilingual" HD voices: the most natural and expressive in edge-tts,
+# with real intonation and warmth instead of a flat, read-aloud tone.
 VOICES = [
-    "en-US-AvaNeural",      # soft, warm female
-    "en-US-EmmaNeural",     # gentle, friendly female
-    "en-GB-SoniaNeural",    # soft British female
-    "en-US-AndrewNeural",   # warm, soft male
-    "en-GB-RyanNeural",     # soft British male
-    "en-US-BrianNeural",    # warm, casual male
+    "en-US-AvaMultilingualNeural",     # warm, very natural, expressive female
+    "en-US-EmmaMultilingualNeural",    # gentle, expressive female
+    "en-US-AndrewMultilingualNeural",  # warm, natural, easygoing male
+    "en-US-BrianMultilingualNeural",   # natural, friendly male
 ]
 
 _env_voice = os.getenv("TTS_VOICE", "random")
 VOICE = random.choice(VOICES) if _env_voice in ("", "random") else _env_voice
-RATE = os.getenv("TTS_RATE", "+4%")     # gentle pace = warmer feel
-PITCH = os.getenv("TTS_PITCH", "-2Hz")  # slightly lower = softer/warmer
+RATE = os.getenv("TTS_RATE", "+0%")     # natural, unhurried pace
+PITCH = os.getenv("TTS_PITCH", "+0Hz")  # keep the voice's own intonation
 
 
 async def generate_tts(text: str, voice: str | None = None) -> tuple[str, list[dict]]:

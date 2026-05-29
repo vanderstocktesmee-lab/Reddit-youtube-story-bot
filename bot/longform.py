@@ -149,8 +149,10 @@ def _generate_stories(num: int) -> list:
                     "content": (
                         "You write viral Reddit-style stories read aloud in a long compilation video. "
                         "Open with an irresistible hook on the first line, then tell a vivid, specific, "
-                        "first-person story with a satisfying or shocking ending. Output only the spoken "
-                        "words: no hashtags, no emojis, no labels."
+                        "first-person story with a satisfying or shocking ending. Write the way someone actually "
+                        "talks: vary sentence length, use commas, ellipses (...) and dashes for natural pauses, "
+                        "use contractions, and let real emotion show, so it sounds spoken, not read. "
+                        "Output only the spoken words: no hashtags, no emojis, no labels."
                     ),
                 },
                 {"role": "user", "content": st["prompt"] + " " + random.choice(STORY_SETTINGS)},

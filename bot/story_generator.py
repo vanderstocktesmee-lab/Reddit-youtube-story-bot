@@ -118,6 +118,9 @@ def generate_story() -> dict:
                     "Your number one job is the HOOK: the first sentence must make the viewer unable to scroll away. "
                     "Write in first person as a real person sharing their own story — conversational, specific, "
                     "and emotional, never formal or generic. Use concrete details that make it feel 100% real. "
+                    "Write it the way someone actually TALKS, so a text-to-speech voice reads it with natural rhythm and feeling: "
+                    "vary your sentence length (mix short punchy lines with longer ones), use commas, ellipses (...) and dashes "
+                    "to create natural pauses, use contractions, and let real emotion show. Avoid a flat, list-like rhythm. "
                     "Build tension and pay it off with a satisfying, shocking, or moving ending. "
                     "Output ONLY the spoken words: no hashtags, no emojis, no stage directions, no labels like 'Title:'."
                 ),

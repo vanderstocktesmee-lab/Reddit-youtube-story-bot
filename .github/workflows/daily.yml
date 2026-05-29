@@ -51,5 +51,5 @@ jobs:
           MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TTS_VOICE: ${{ vars.TTS_VOICE || 'random' }}
-          TTS_RATE: ${{ vars.TTS_RATE || '+4%' }}
+          TTS_RATE: ${{ vars.TTS_RATE || '+0%' }}
         run: python -m bot.main
