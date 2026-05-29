@@ -23,7 +23,7 @@ from bot.story_generator import (
     _split_hook,
     client,
 )
-from bot.tts_generator import PITCH, RATE, VOICES
+from bot.tts_generator import PITCH, RATE, VOICE
 from bot.video_creator import SUBREDDITS, _download_background, _font
 
 LWIDTH, LHEIGHT = 1920, 1080
@@ -173,7 +173,7 @@ def _generate_stories(num: int) -> list:
 
 async def run_longform() -> tuple:
     num = int(os.getenv("LONG_STORIES", "4"))
-    voice = random.choice(VOICES)
+    voice = VOICE
 
     segments = [{"text": INTRO_TEXT, "hook": None, "genre": None}]
     segments += [

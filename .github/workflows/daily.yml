@@ -50,6 +50,6 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TTS_VOICE: ${{ vars.TTS_VOICE || 'random' }}
+          TTS_VOICE: ${{ vars.TTS_VOICE || 'en-US-AvaMultilingualNeural' }}
           TTS_RATE: ${{ vars.TTS_RATE || '+0%' }}
         run: python -m bot.main
