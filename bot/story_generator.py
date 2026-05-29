@@ -1,5 +1,6 @@
 import os
 import random
+import re
 
 from openai import OpenAI
 
@@ -61,13 +62,33 @@ STORY_TYPES = [
     },
 ]
 
-BG_QUERIES = {
-    "aita": "city night rain window",
-    "revenge": "office hallway empty",
-    "confession": "dark road night driving",
-    "horror": "dark forest fog night",
-    "wholesome": "golden hour park bench",
-}
+# Satisfying / ASMR-style background loops (Reddit-Shorts vibe)
+SATISFYING_BG = [
+    "satisfying",
+    "ink in water slow motion",
+    "kinetic sand cutting",
+    "honey pouring macro",
+    "water drops slow motion",
+    "paint mixing colorful",
+    "soap cutting",
+    "ocean waves aerial calm",
+]
+
+
+def _split_hook(text: str) -> tuple[str, str]:
+    """Separate the opening question/hook (first line) from the story body."""
+    text = text.strip()
+    for label in ("Title:", "TITLE:", "Hook:"):
+        if text.startswith(label):
+            text = text[len(label):].strip()
+    parts = text.split("\n", 1)
+    if len(parts) == 2 and parts[0].strip():
+        return parts[0].strip(), parts[1].strip()
+    m = re.search(r"[.?!]", text)
+    if m:
+        idx = m.end()
+        return text[:idx].strip(), text[idx:].strip()
+    return text[:80].strip(), text[80:].strip()
 
 
 def generate_story() -> dict:
@@ -91,7 +112,9 @@ def generate_story() -> dict:
         ],
         max_tokens=600,
     )
-    narration = story_resp.choices[0].message.content.strip()
+    raw = story_resp.choices[0].message.content.strip()
+    hook, body = _split_hook(raw)
+    narration = (hook + " " + body).strip()
 
     FIXED_TITLE = "DONT CHECK THE SOUND!!"
     FIXED_DESCRIPTION = (
@@ -101,11 +124,12 @@ def generate_story() -> dict:
 
     return {
         "narration": narration,
+        "hook": hook,
         "title": FIXED_TITLE,
         "description": FIXED_DESCRIPTION,
         "tags": ["shorts", "viral", "story", "reddit", "fyp", "foryou", "trending",
                  "storytime", "satisfying", "interesting", "scary", "confession",
                  "revenge", "relatable", "omg"],
         "genre": story_type["genre"],
-        "bg_query": BG_QUERIES.get(story_type["genre"], "cinematic nature landscape"),
+        "bg_query": random.choice(SATISFYING_BG),
     }

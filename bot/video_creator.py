@@ -18,27 +18,49 @@ PEXELS_KEY = os.environ["PEXELS_API_KEY"]
 WIDTH, HEIGHT = 1080, 1920
 FPS = 30
 
-GENRE_QUERIES = {
-    "aita": "city night rain",
-    "revenge": "office hallway empty",
-    "confession": "dark road night driving",
-    "horror": "dark forest fog night",
-    "wholesome": "golden hour park bench",
+SUBREDDITS = {
+    "aita": "r/AmItheAsshole",
+    "revenge": "r/pettyrevenge",
+    "confession": "r/confessions",
+    "horror": "r/nosleep",
+    "wholesome": "r/MadeMeSmile",
 }
 
+FALLBACK_BG = ["satisfying", "abstract motion", "nature aerial"]
 
-def _download_background(query_or_genre: str) -> str:
-    query = GENRE_QUERIES.get(query_or_genre, query_or_genre or "nature landscape cinematic")
+
+def _font(bold: bool = True, size: int = 48) -> ImageFont.FreeTypeFont:
+    bold_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+    ]
+    reg_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+    ]
+    for fp in (bold_paths if bold else reg_paths):
+        if os.path.exists(fp):
+            return ImageFont.truetype(fp, size)
+    return ImageFont.load_default()
+
+
+def _download_background(query: str) -> str:
     headers = {"Authorization": PEXELS_KEY}
-
-    for orientation in ["portrait", "landscape"]:
-        r = requests.get(
-            "https://api.pexels.com/videos/search",
-            headers=headers,
-            params={"query": query, "per_page": 15, "orientation": orientation},
-            timeout=30,
-        )
-        videos = r.json().get("videos", [])
+    queries = [query] + [q for q in FALLBACK_BG if q != query]
+    videos = []
+    for q in queries:
+        for orientation in ["portrait", "landscape"]:
+            r = requests.get(
+                "https://api.pexels.com/videos/search",
+                headers=headers,
+                params={"query": q, "per_page": 15, "orientation": orientation},
+                timeout=30,
+            )
+            videos = r.json().get("videos", [])
+            if videos:
+                break
         if videos:
             break
 
@@ -47,7 +69,7 @@ def _download_background(query_or_genre: str) -> str:
 
     video = random.choice(videos[:10])
     files = video["video_files"]
-    # Prefer ~HD (1080-1920 tall) for speed; avoid heavy 4K. Fall back to smallest decent file.
+    # Prefer ~HD for speed; avoid heavy 4K.
     hd = [f for f in files if 1080 <= f.get("height", 0) <= 2000]
     if hd:
         url = min(hd, key=lambda f: f.get("height", 0))["link"]
@@ -63,64 +85,122 @@ def _download_background(query_or_genre: str) -> str:
     return path
 
 
-def _make_subtitle_image(words: list[str]) -> np.ndarray:
+def _make_reddit_card(hook: str, genre: str) -> np.ndarray:
+    img = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    title_font = _font(bold=True, size=54)
+    sub_font = _font(bold=True, size=36)
+    meta_font = _font(bold=False, size=28)
+
+    card_x = 50
+    card_w = WIDTH - 2 * card_x
+    pad = 44
+    inner_w = card_w - 2 * pad
+
+    def wrap(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> list:
+        lines, cur = [], ""
+        for word in text.split():
+            test = (cur + " " + word).strip()
+            if draw.textlength(test, font=font) <= max_w:
+                cur = test
+            else:
+                if cur:
+                    lines.append(cur)
+                cur = word
+        if cur:
+            lines.append(cur)
+        return lines
+
+    title_lines = wrap(hook, title_font, inner_w)
+    title_lh = 66
+    header_h = 78
+    card_h = pad + header_h + 24 + title_lh * len(title_lines) + pad
+    card_y = int(HEIGHT * 0.20)
+
+    # drop shadow + white card
+    draw.rounded_rectangle(
+        [card_x + 6, card_y + 10, card_x + card_w + 6, card_y + card_h + 10],
+        radius=32, fill=(0, 0, 0, 110),
+    )
+    draw.rounded_rectangle(
+        [card_x, card_y, card_x + card_w, card_y + card_h],
+        radius=32, fill=(255, 255, 255, 255),
+    )
+
+    # avatar
+    av_r = 28
+    av_cx = card_x + pad + av_r
+    av_cy = card_y + pad + av_r
+    draw.ellipse(
+        [av_cx - av_r, av_cy - av_r, av_cx + av_r, av_cy + av_r],
+        fill=(255, 69, 0, 255),
+    )
+
+    sub = SUBREDDITS.get(genre, "r/stories")
+    tx = av_cx + av_r + 20
+    draw.text((tx, card_y + pad - 2), sub, font=sub_font, fill=(20, 20, 20, 255))
+    draw.text(
+        (tx, card_y + pad + 40),
+        "Posted by u/throwaway · now",
+        font=meta_font,
+        fill=(120, 120, 120, 255),
+    )
+
+    ty = card_y + pad + header_h + 24
+    for line in title_lines:
+        draw.text((card_x + pad, ty), line, font=title_font, fill=(15, 15, 15, 255))
+        ty += title_lh
+
+    return np.array(img)
+
+
+def _make_subtitle_image(words: list) -> np.ndarray:
     img = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
     text = " ".join(words).upper()
-    wrapped = textwrap.fill(text, width=18)
-
-    font_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
-    ]
-    font = None
-    for fp in font_paths:
-        if os.path.exists(fp):
-            font = ImageFont.truetype(fp, 85)
-            break
-    if font is None:
-        font = ImageFont.load_default()
+    wrapped = textwrap.fill(text, width=15)
+    font = _font(bold=True, size=84)
 
     lines = wrapped.split("\n")
-    line_height = 95
+    line_height = 98
     total_h = line_height * len(lines)
-    y_start = int(HEIGHT * 0.68) - total_h // 2
+    y_start = int(HEIGHT * 0.70) - total_h // 2
 
+    outline = [
+        (-3, -3), (3, -3), (-3, 3), (3, 3),
+        (0, 4), (0, -4), (4, 0), (-4, 0),
+    ]
     for line in lines:
         bbox = draw.textbbox((0, 0), line, font=font)
         w = bbox[2] - bbox[0]
         x = (WIDTH - w) // 2
-        draw.text((x + 3, y_start + 3), line, font=font, fill=(0, 0, 0, 220))
-        draw.text((x, y_start), line, font=font, fill=(255, 230, 0, 255))
+        for dx, dy in outline:
+            draw.text((x + dx, y_start + dy), line, font=font, fill=(0, 0, 0, 255))
+        draw.text((x, y_start), line, font=font, fill=(255, 222, 0, 255))
         y_start += line_height
 
     return np.array(img)
 
 
-def _build_subtitle_clips(word_boundaries: list[dict], duration: float) -> list:
+def _build_subtitle_clips(word_boundaries: list, duration: float, chunk_size: int = 3) -> list:
     clips = []
-    chunk_size = 4
     for i in range(0, len(word_boundaries), chunk_size):
         chunk = word_boundaries[i : i + chunk_size]
         words = [w["word"] for w in chunk]
         start = chunk[0]["start"]
-        end = chunk[-1]["end"] + 0.05
-        end = min(end, duration)
+        end = min(chunk[-1]["end"] + 0.05, duration)
         if end <= start:
             continue
         frame = _make_subtitle_image(words)
-        clip = (
-            ImageClip(frame, ismask=False)
-            .set_start(start)
-            .set_duration(end - start)
+        clips.append(
+            ImageClip(frame, ismask=False).set_start(start).set_duration(end - start)
         )
-        clips.append(clip)
     return clips
 
 
-def create_video(audio_path: str, word_boundaries: list[dict], metadata: dict) -> str:
+def create_video(audio_path: str, word_boundaries: list, metadata: dict) -> str:
     output_path = "/tmp/output.mp4"
     audio = AudioFileClip(audio_path)
     duration = audio.duration
@@ -134,9 +214,15 @@ def create_video(audio_path: str, word_boundaries: list[dict], metadata: dict) -
                 for i, w in enumerate(words)
             ]
 
-    bg_path = _download_background(metadata.get("bg_query") or metadata.get("genre", ""))
-    bg = VideoFileClip(bg_path, audio=False)
+    # Split off the opening hook so it can be shown as a Reddit card.
+    hook = (metadata.get("hook") or "").strip()
+    hook_words = min(len(hook.split()), len(word_boundaries)) if hook else 0
+    hook_end = word_boundaries[hook_words - 1]["end"] + 0.15 if hook_words else 0.0
+    hook_end = min(hook_end, duration)
+    body_boundaries = word_boundaries[hook_words:]
 
+    bg_path = _download_background(metadata.get("bg_query") or "satisfying")
+    bg = VideoFileClip(bg_path, audio=False)
     if bg.duration < duration:
         loops = int(duration / bg.duration) + 1
         bg = concatenate_videoclips([bg] * loops)
@@ -145,21 +231,21 @@ def create_video(audio_path: str, word_boundaries: list[dict], metadata: dict) -
     bw, bh = bg.size
     target_ratio = WIDTH / HEIGHT
     if bw / bh > target_ratio:
-        new_w = int(bh * target_ratio)
-        bg = bg.crop(x_center=bw // 2, width=new_w)
+        bg = bg.crop(x_center=bw // 2, width=int(bh * target_ratio))
     else:
-        new_h = int(bw / target_ratio)
-        bg = bg.crop(y_center=bh // 2, height=new_h)
+        bg = bg.crop(y_center=bh // 2, height=int(bw / target_ratio))
     bg = bg.resize((WIDTH, HEIGHT))
 
-    dim = ColorClip((WIDTH, HEIGHT), color=(0, 0, 0)).set_opacity(0.45).set_duration(duration)
-    subtitle_clips = _build_subtitle_clips(word_boundaries, duration)
+    dim = ColorClip((WIDTH, HEIGHT), color=(0, 0, 0)).set_opacity(0.35).set_duration(duration)
+    layers = [bg, dim]
 
-    final = CompositeVideoClip(
-        [bg, dim] + subtitle_clips,
-        size=(WIDTH, HEIGHT),
-    ).set_audio(audio)
+    if hook and hook_end > 0:
+        card = _make_reddit_card(hook, metadata.get("genre", ""))
+        layers.append(ImageClip(card, ismask=False).set_start(0).set_duration(hook_end))
 
+    layers += _build_subtitle_clips(body_boundaries, duration)
+
+    final = CompositeVideoClip(layers, size=(WIDTH, HEIGHT)).set_audio(audio)
     final.write_videofile(
         output_path,
         fps=FPS,
