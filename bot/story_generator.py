@@ -1,4 +1,3 @@
-import json
 import os
 import random
 
@@ -84,33 +83,19 @@ def generate_story() -> dict:
     )
     narration = story_resp.choices[0].message.content.strip()
 
-    meta_resp = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "Generate YouTube Shorts metadata. Return ONLY valid JSON with keys: "
-                    "title (string, max 80 chars, very catchy, creates curiosity, no spoilers), "
-                    "description (2 short paragraphs then hashtags including #shorts #story #fyp), "
-                    "tags (array of 15 strings)."
-                ),
-            },
-            {
-                "role": "user",
-                "content": f"Story preview: {narration[:400]}",
-            },
-        ],
-        max_tokens=500,
-        response_format={"type": "json_object"},
+    FIXED_TITLE = "DONT CHECK THE SOUND!!"
+    FIXED_DESCRIPTION = (
+        "#shorts #viral #story #reddit #fyp #foryou #trending #storytime "
+        "#satisfying #interesting #scary #confession #revenge #relatable #omg"
     )
-    meta = json.loads(meta_resp.choices[0].message.content)
 
     return {
         "narration": narration,
-        "title": str(meta.get("title", "You won't believe this story"))[:80],
-        "description": str(meta.get("description", "")),
-        "tags": list(meta.get("tags", []))[:15],
+        "title": FIXED_TITLE,
+        "description": FIXED_DESCRIPTION,
+        "tags": ["shorts", "viral", "story", "reddit", "fyp", "foryou", "trending",
+                 "storytime", "satisfying", "interesting", "scary", "confession",
+                 "revenge", "relatable", "omg"],
         "genre": story_type["genre"],
         "bg_query": BG_QUERIES.get(story_type["genre"], "cinematic nature landscape"),
     }
