@@ -1,3 +1,4 @@
+import glob
 import os
 import random
 import textwrap
@@ -12,7 +13,7 @@ from moviepy.editor import (
     VideoFileClip,
     concatenate_videoclips,
 )
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 PEXELS_KEY = os.environ["PEXELS_API_KEY"]
 WIDTH, HEIGHT = 1080, 1920
@@ -28,31 +29,35 @@ SUBREDDITS = {
 
 FALLBACK_BG = ["satisfying", "abstract motion", "nature aerial"]
 
-# A subtitle colour is picked once per run so videos vary but stay consistent within one video.
+# Warm, soft subtitle colours (picked once per run, consistent within one video).
 SUB_COLORS = [
-    (255, 222, 0),    # yellow
-    (255, 255, 255),  # white
-    (64, 255, 140),   # green
-    (80, 200, 255),   # cyan
+    (255, 248, 236),  # warm cream
+    (255, 226, 184),  # soft amber
+    (255, 206, 184),  # soft peach
+    (212, 240, 222),  # soft sage
 ]
 SUB_COLOR = random.choice(SUB_COLORS)
 
 
+_FONT_CACHE = {}
+
+
 def _font(bold: bool = True, size: int = 48) -> ImageFont.FreeTypeFont:
-    bold_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
-    ]
-    reg_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-    ]
-    for fp in (bold_paths if bold else reg_paths):
-        if os.path.exists(fp):
-            return ImageFont.truetype(fp, size)
-    return ImageFont.load_default()
+    key = (bold, size)
+    if key in _FONT_CACHE:
+        return _FONT_CACHE[key]
+    # Prefer warm, rounded fonts; fall back to whatever is installed.
+    bold_names = ["Comfortaa-Bold.ttf", "Quicksand-Bold.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"]
+    reg_names = ["Comfortaa-Regular.ttf", "Quicksand-Regular.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf"]
+    chosen = None
+    for name in (bold_names if bold else reg_names):
+        hits = glob.glob(f"/usr/share/fonts/**/{name}", recursive=True)
+        if hits:
+            chosen = hits[0]
+            break
+    font = ImageFont.truetype(chosen, size) if chosen else ImageFont.load_default()
+    _FONT_CACHE[key] = font
+    return font
 
 
 def _download_background(query: str) -> str:
@@ -165,30 +170,33 @@ def _make_reddit_card(hook: str, genre: str) -> np.ndarray:
 
 
 def _make_subtitle_image(words: list) -> np.ndarray:
-    img = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    text = " ".join(words).upper()
-    wrapped = textwrap.fill(text, width=15)
-    font = _font(bold=True, size=84)
+    text = " ".join(words)
+    wrapped = textwrap.fill(text, width=18)
+    font = _font(bold=True, size=80)
 
     lines = wrapped.split("\n")
-    line_height = 98
+    line_height = 94
     total_h = line_height * len(lines)
-    y_start = int(HEIGHT * 0.70) - total_h // 2
+    y = int(HEIGHT * 0.70) - total_h // 2
 
-    outline = [
-        (-3, -3), (3, -3), (-3, 3), (3, 3),
-        (0, 4), (0, -4), (4, 0), (-4, 0),
-    ]
+    measure = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
+    placed = []
     for line in lines:
-        bbox = draw.textbbox((0, 0), line, font=font)
+        bbox = measure.textbbox((0, 0), line, font=font)
         w = bbox[2] - bbox[0]
-        x = (WIDTH - w) // 2
-        for dx, dy in outline:
-            draw.text((x + dx, y_start + dy), line, font=font, fill=(0, 0, 0, 255))
-        draw.text((x, y_start), line, font=font, fill=(*SUB_COLOR, 255))
-        y_start += line_height
+        placed.append((line, (WIDTH - w) // 2, y))
+        y += line_height
+
+    # soft blurred shadow = warm glow instead of a hard angular outline
+    shadow = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    sdraw = ImageDraw.Draw(shadow)
+    for line, x, ly in placed:
+        sdraw.text((x, ly + 4), line, font=font, fill=(0, 0, 0, 190))
+    img = shadow.filter(ImageFilter.GaussianBlur(9))
+
+    draw = ImageDraw.Draw(img)
+    for line, x, ly in placed:
+        draw.text((x, ly), line, font=font, fill=(*SUB_COLOR, 255))
 
     return np.array(img)
 

@@ -3,25 +3,26 @@ import random
 
 import edge_tts
 
-# Natural, human-sounding voices used by top Reddit-story channels.
-# A random one is picked per run so the channel doesn't sound templated.
+# Warm, soft, human-sounding voices. A random one is picked per run so the
+# channel varies but every voice has a gentle, cosy tone (soft male / soft female).
 VOICES = [
-    "en-US-AndrewNeural",
-    "en-US-BrianNeural",
-    "en-US-AriaNeural",
-    "en-US-JennyNeural",
-    "en-US-GuyNeural",
-    "en-US-EmmaNeural",
+    "en-US-AvaNeural",      # soft, warm female
+    "en-US-EmmaNeural",     # gentle, friendly female
+    "en-GB-SoniaNeural",    # soft British female
+    "en-US-AndrewNeural",   # warm, soft male
+    "en-GB-RyanNeural",     # soft British male
+    "en-US-BrianNeural",    # warm, casual male
 ]
 
 _env_voice = os.getenv("TTS_VOICE", "random")
 VOICE = random.choice(VOICES) if _env_voice in ("", "random") else _env_voice
-RATE = os.getenv("TTS_RATE", "+13%")
+RATE = os.getenv("TTS_RATE", "+4%")     # gentle pace = warmer feel
+PITCH = os.getenv("TTS_PITCH", "-2Hz")  # slightly lower = softer/warmer
 
 
 async def generate_tts(text: str, voice: str | None = None) -> tuple[str, list[dict]]:
     audio_path = "/tmp/narration.mp3"
-    communicate = edge_tts.Communicate(text, voice or VOICE, rate=RATE)
+    communicate = edge_tts.Communicate(text, voice or VOICE, rate=RATE, pitch=PITCH)
 
     audio_chunks = []
     word_boundaries = []

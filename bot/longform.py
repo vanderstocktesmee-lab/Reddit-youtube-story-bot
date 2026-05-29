@@ -23,7 +23,7 @@ from bot.story_generator import (
     _split_hook,
     client,
 )
-from bot.tts_generator import RATE, VOICES
+from bot.tts_generator import PITCH, RATE, VOICES
 from bot.video_creator import SUBREDDITS, _download_background, _font
 
 LWIDTH, LHEIGHT = 1920, 1080
@@ -61,7 +61,7 @@ OUTRO_TEXT = (
 
 
 async def _tts_to_file(text: str, voice: str, path: str) -> str:
-    communicate = edge_tts.Communicate(text, voice, rate=RATE)
+    communicate = edge_tts.Communicate(text, voice, rate=RATE, pitch=PITCH)
     with open(path, "wb") as f:
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
