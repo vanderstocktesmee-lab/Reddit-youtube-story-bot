@@ -46,8 +46,14 @@ def _download_background(query_or_genre: str) -> str:
         raise RuntimeError("No background videos found on Pexels.")
 
     video = random.choice(videos[:10])
-    files = sorted(video["video_files"], key=lambda f: f.get("height", 0), reverse=True)
-    url = files[0]["link"]
+    files = video["video_files"]
+    # Prefer ~HD (1080-1920 tall) for speed; avoid heavy 4K. Fall back to smallest decent file.
+    hd = [f for f in files if 1080 <= f.get("height", 0) <= 2000]
+    if hd:
+        url = min(hd, key=lambda f: f.get("height", 0))["link"]
+    else:
+        decent = [f for f in files if f.get("height", 0) >= 720] or files
+        url = min(decent, key=lambda f: f.get("height", 0))["link"]
 
     path = "/tmp/background.mp4"
     with requests.get(url, stream=True, timeout=60) as r:
