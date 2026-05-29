@@ -119,6 +119,15 @@ def create_video(audio_path: str, word_boundaries: list[dict], metadata: dict) -
     audio = AudioFileClip(audio_path)
     duration = audio.duration
 
+    if not word_boundaries:
+        words = metadata.get("narration", "").split()
+        if words:
+            per = duration / len(words)
+            word_boundaries = [
+                {"word": w, "start": i * per, "end": (i + 1) * per}
+                for i, w in enumerate(words)
+            ]
+
     bg_path = _download_background(metadata.get("bg_query") or metadata.get("genre", ""))
     bg = VideoFileClip(bg_path, audio=False)
 
