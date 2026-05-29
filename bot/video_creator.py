@@ -28,6 +28,15 @@ SUBREDDITS = {
 
 FALLBACK_BG = ["satisfying", "abstract motion", "nature aerial"]
 
+# A subtitle colour is picked once per run so videos vary but stay consistent within one video.
+SUB_COLORS = [
+    (255, 222, 0),    # yellow
+    (255, 255, 255),  # white
+    (64, 255, 140),   # green
+    (80, 200, 255),   # cyan
+]
+SUB_COLOR = random.choice(SUB_COLORS)
+
 
 def _font(bold: bool = True, size: int = 48) -> ImageFont.FreeTypeFont:
     bold_paths = [
@@ -178,7 +187,7 @@ def _make_subtitle_image(words: list) -> np.ndarray:
         x = (WIDTH - w) // 2
         for dx, dy in outline:
             draw.text((x + dx, y_start + dy), line, font=font, fill=(0, 0, 0, 255))
-        draw.text((x, y_start), line, font=font, fill=(255, 222, 0, 255))
+        draw.text((x, y_start), line, font=font, fill=(*SUB_COLOR, 255))
         y_start += line_height
 
     return np.array(img)

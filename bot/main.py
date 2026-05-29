@@ -1,15 +1,17 @@
 import asyncio
+import os
 
-from bot.story_generator import generate_story
-from bot.tts_generator import generate_tts
-from bot.video_creator import create_video
 from bot.publisher import publish_video
 
 
-async def run():
+async def run_short():
+    from bot.story_generator import generate_story
+    from bot.tts_generator import generate_tts
+    from bot.video_creator import create_video
+
     print("==> Generating story with AI...")
     story = generate_story()
-    print(f"    Genre: {story['genre']} | Title: {story['title']}")
+    print(f"    Genre: {story['genre']} | Hook: {story['hook']}")
 
     print("==> Generating TTS narration...")
     audio_path, word_boundaries = await generate_tts(story["narration"])
@@ -20,14 +22,25 @@ async def run():
     print(f"    Video: {video_path}")
 
     print("==> Publishing (GitHub Releases + Make.com)...")
-    video_url = publish_video(
-        video_path,
-        story["title"],
-        story["description"],
-        story["tags"],
-    )
+    video_url = publish_video(video_path, story["title"], story["description"], story["tags"])
+    print(f"==> Done! Video URL: {video_url}")
+
+
+async def run_long():
+    from bot.longform import run_longform
+
+    print("==> Generating long-form compilation (this takes a while)...")
+    video_path, title, description, tags = await run_longform()
+    print(f"    Video: {video_path} | Title: {title}")
+
+    print("==> Publishing (GitHub Releases + Make.com)...")
+    video_url = publish_video(video_path, title, description, tags)
     print(f"==> Done! Video URL: {video_url}")
 
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    mode = os.getenv("MODE", "short").strip().lower()
+    if mode == "long":
+        asyncio.run(run_long())
+    else:
+        asyncio.run(run_short())

@@ -1,14 +1,27 @@
-import asyncio
 import os
+import random
+
 import edge_tts
 
-VOICE = os.getenv("TTS_VOICE", "en-US-AndrewNeural")
-RATE = os.getenv("TTS_RATE", "+15%")
+# Natural, human-sounding voices used by top Reddit-story channels.
+# A random one is picked per run so the channel doesn't sound templated.
+VOICES = [
+    "en-US-AndrewNeural",
+    "en-US-BrianNeural",
+    "en-US-AriaNeural",
+    "en-US-JennyNeural",
+    "en-US-GuyNeural",
+    "en-US-EmmaNeural",
+]
+
+_env_voice = os.getenv("TTS_VOICE", "random")
+VOICE = random.choice(VOICES) if _env_voice in ("", "random") else _env_voice
+RATE = os.getenv("TTS_RATE", "+13%")
 
 
-async def generate_tts(text: str) -> tuple[str, list[dict]]:
+async def generate_tts(text: str, voice: str | None = None) -> tuple[str, list[dict]]:
     audio_path = "/tmp/narration.mp3"
-    communicate = edge_tts.Communicate(text, VOICE, rate=RATE)
+    communicate = edge_tts.Communicate(text, voice or VOICE, rate=RATE)
 
     audio_chunks = []
     word_boundaries = []

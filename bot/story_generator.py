@@ -62,6 +62,20 @@ STORY_TYPES = [
     },
 ]
 
+# Random flavour added to each prompt so stories don't feel repetitive.
+STORY_SETTINGS = [
+    "Set it around a wedding or family event.",
+    "Set it at a workplace with a difficult colleague or boss.",
+    "Set it between neighbours or roommates.",
+    "Set it during a holiday or trip.",
+    "Set it within a friendship that goes wrong.",
+    "Set it around money, an inheritance, or a debt.",
+    "Set it between siblings or with an in-law.",
+    "Set it late at night when the narrator is alone.",
+    "Involve a surprising text message or phone call.",
+    "Involve a secret that finally comes out.",
+]
+
 # Satisfying / ASMR-style background loops (Reddit-Shorts vibe)
 SATISFYING_BG = [
     "satisfying",
@@ -108,7 +122,7 @@ def generate_story() -> dict:
                     "Output ONLY the spoken words: no hashtags, no emojis, no stage directions, no labels like 'Title:'."
                 ),
             },
-            {"role": "user", "content": story_type["prompt"]},
+            {"role": "user", "content": story_type["prompt"] + " " + random.choice(STORY_SETTINGS)},
         ],
         max_tokens=600,
     )
