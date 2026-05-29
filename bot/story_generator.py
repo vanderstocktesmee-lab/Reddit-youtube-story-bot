@@ -2,9 +2,12 @@ import json
 import os
 import random
 
-from groq import Groq
+from openai import OpenAI
 
-client = Groq(api_key=os.environ["GROQ_API_KEY"])
+client = OpenAI(
+    api_key=os.environ["GROQ_API_KEY"],
+    base_url="https://api.groq.com/openai/v1",
+)
 MODEL = "llama-3.3-70b-versatile"
 
 STORY_TYPES = [
