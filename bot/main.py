@@ -11,7 +11,7 @@ async def run_short():
 
     print("==> Generating story with AI...")
     story = generate_story()
-    print(f"    Genre: {story['genre']} | Hook: {story['hook']}")
+    print(f"    Source: {story.get('source', '?')} | Genre: {story['genre']} | Hook: {story['hook']}")
 
     print("==> Generating TTS narration...")
     audio_path, word_boundaries = await generate_tts(story["narration"])

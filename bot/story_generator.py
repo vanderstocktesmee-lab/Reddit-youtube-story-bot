@@ -105,48 +105,65 @@ def _split_hook(text: str) -> tuple[str, str]:
     return text[:80].strip(), text[80:].strip()
 
 
-def generate_story() -> dict:
-    story_type = random.choice(STORY_TYPES)
+FIXED_TITLE = "DONT CHECK THE SOUND!!"
+FIXED_DESCRIPTION = (
+    "#shorts #viral #story #reddit #fyp #foryou #trending #storytime "
+    "#satisfying #interesting #scary #confession #revenge #relatable #omg"
+)
+FIXED_TAGS = [
+    "shorts", "viral", "story", "reddit", "fyp", "foryou", "trending",
+    "storytime", "satisfying", "interesting", "scary", "confession",
+    "revenge", "relatable", "omg",
+]
 
-    story_resp = client.chat.completions.create(
+SHORT_SYSTEM_PROMPT = (
+    "You write viral Reddit-style stories for YouTube Shorts narration. "
+    "Your number one job is the HOOK: the first sentence must make the viewer unable to scroll away. "
+    "Write in first person as a real person sharing their own story — conversational, specific, "
+    "and emotional, never formal or generic. Use concrete details that make it feel 100% real. "
+    "Write it the way someone actually TALKS, so a text-to-speech voice reads it with natural rhythm and feeling: "
+    "vary your sentence length (mix short punchy lines with longer ones), use commas, ellipses (...) and dashes "
+    "to create natural pauses, use contractions, and let real emotion show. Avoid a flat, list-like rhythm. "
+    "Build tension and pay it off with a satisfying, shocking, or moving ending. "
+    "Output ONLY the spoken words: no hashtags, no emojis, no stage directions, no labels like 'Title:'."
+)
+
+
+def _ai_story() -> dict:
+    story_type = random.choice(STORY_TYPES)
+    resp = client.chat.completions.create(
         model=MODEL,
         messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You write viral Reddit-style stories for YouTube Shorts narration. "
-                    "Your number one job is the HOOK: the first sentence must make the viewer unable to scroll away. "
-                    "Write in first person as a real person sharing their own story — conversational, specific, "
-                    "and emotional, never formal or generic. Use concrete details that make it feel 100% real. "
-                    "Write it the way someone actually TALKS, so a text-to-speech voice reads it with natural rhythm and feeling: "
-                    "vary your sentence length (mix short punchy lines with longer ones), use commas, ellipses (...) and dashes "
-                    "to create natural pauses, use contractions, and let real emotion show. Avoid a flat, list-like rhythm. "
-                    "Build tension and pay it off with a satisfying, shocking, or moving ending. "
-                    "Output ONLY the spoken words: no hashtags, no emojis, no stage directions, no labels like 'Title:'."
-                ),
-            },
+            {"role": "system", "content": SHORT_SYSTEM_PROMPT},
             {"role": "user", "content": story_type["prompt"] + " " + random.choice(STORY_SETTINGS)},
         ],
         max_tokens=600,
     )
-    raw = story_resp.choices[0].message.content.strip()
+    raw = resp.choices[0].message.content.strip()
     hook, body = _split_hook(raw)
-    narration = (hook + " " + body).strip()
-
-    FIXED_TITLE = "DONT CHECK THE SOUND!!"
-    FIXED_DESCRIPTION = (
-        "#shorts #viral #story #reddit #fyp #foryou #trending #storytime "
-        "#satisfying #interesting #scary #confession #revenge #relatable #omg"
-    )
-
     return {
-        "narration": narration,
+        "narration": (hook + " " + body).strip(),
         "hook": hook,
-        "title": FIXED_TITLE,
-        "description": FIXED_DESCRIPTION,
-        "tags": ["shorts", "viral", "story", "reddit", "fyp", "foryou", "trending",
-                 "storytime", "satisfying", "interesting", "scary", "confession",
-                 "revenge", "relatable", "omg"],
         "genre": story_type["genre"],
         "bg_query": random.choice(SATISFYING_BG),
+        "source": "ai",
     }
+
+
+def generate_story() -> dict:
+    # ~50% of the time base the story on a real Reddit post (cleaned for narration);
+    # otherwise generate an original AI story. Any Reddit failure falls back to AI.
+    story = None
+    if random.random() < 0.5:
+        try:
+            from bot.reddit_source import fetch_reddit_story
+            story = fetch_reddit_story()
+        except Exception:
+            story = None
+    if story is None:
+        story = _ai_story()
+
+    story["title"] = FIXED_TITLE
+    story["description"] = FIXED_DESCRIPTION
+    story["tags"] = FIXED_TAGS
+    return story

@@ -137,37 +137,46 @@ def _make_card_landscape(hook: str, genre: str) -> np.ndarray:
     return np.array(img)
 
 
+def _ai_compilation_story() -> dict:
+    st = random.choice(STORY_TYPES)
+    resp = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You write viral Reddit-style stories read aloud in a long compilation video. "
+                    "Open with an irresistible hook on the first line, then tell a vivid, specific, "
+                    "first-person story with a satisfying or shocking ending. Write the way someone actually "
+                    "talks: vary sentence length, use commas, ellipses (...) and dashes for natural pauses, "
+                    "use contractions, and let real emotion show, so it sounds spoken, not read. "
+                    "Output only the spoken words: no hashtags, no emojis, no labels."
+                ),
+            },
+            {"role": "user", "content": st["prompt"] + " " + random.choice(STORY_SETTINGS)},
+        ],
+        max_tokens=600,
+    )
+    raw = resp.choices[0].message.content.strip()
+    hook, body = _split_hook(raw)
+    return {"hook": hook, "text": (hook + " " + body).strip(), "genre": st["genre"]}
+
+
 def _generate_stories(num: int) -> list:
     stories = []
     for _ in range(num):
-        st = random.choice(STORY_TYPES)
-        resp = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You write viral Reddit-style stories read aloud in a long compilation video. "
-                        "Open with an irresistible hook on the first line, then tell a vivid, specific, "
-                        "first-person story with a satisfying or shocking ending. Write the way someone actually "
-                        "talks: vary sentence length, use commas, ellipses (...) and dashes for natural pauses, "
-                        "use contractions, and let real emotion show, so it sounds spoken, not read. "
-                        "Output only the spoken words: no hashtags, no emojis, no labels."
-                    ),
-                },
-                {"role": "user", "content": st["prompt"] + " " + random.choice(STORY_SETTINGS)},
-            ],
-            max_tokens=600,
-        )
-        raw = resp.choices[0].message.content.strip()
-        hook, body = _split_hook(raw)
-        stories.append(
-            {
-                "hook": hook,
-                "text": (hook + " " + body).strip(),
-                "genre": st["genre"],
-            }
-        )
+        story = None
+        if random.random() < 0.5:
+            try:
+                from bot.reddit_source import fetch_reddit_story
+                r = fetch_reddit_story()
+                if r:
+                    story = {"hook": r["hook"], "text": r["narration"], "genre": r["genre"]}
+            except Exception:
+                story = None
+        if story is None:
+            story = _ai_compilation_story()
+        stories.append(story)
     return stories
 
 
